@@ -254,20 +254,24 @@ h1,h2,h3{font-family:var(--head);font-weight:600;letter-spacing:-.015em;margin:0
 /* ══════════════════════════════════════════════════════════════════════════
    CONFIG — the only part that normally needs editing.
 
-   url      where the person ends up once the service answers
-   probe    what we request to wake it. Same origin as `url`; a small, always
-            present path is ideal. The request is sent no-cors, so we never
-            read the response — we only care that the server answered, which
-            is exactly what "awake" means.
-   warm     also ping this service quietly in the background, so the other
-            suite is ready if they switch.
+   url      where the person ends up
+   probe    what we request to wake it — same origin as `url`
+   sleeps   true for a Render web service that spins down when idle (the
+            ERP); false for a static site that is always on (the Data
+            Protection Suite) — those go straight through, no waiting
+   opening  the headline while it wakes
+
+   When dps.acktvt.com is pointed at Render, change the two DPS addresses
+   below to https://dps.acktvt.com/... — nothing else needs touching.
    ══════════════════════════════════════════════════════════════════════════ */
 var APPS = {
   dps: {
     name: 'Data Protection Suite',
     lead: 'DPDP compliance workspace',
-    url:   'https://dps.acktvt.com/login',
-    probe: 'https://dps.acktvt.com/',
+    opening: 'Opening your DPDP compliance workspace',
+    url:   'https://acktvt-dps-app.onrender.com/login',
+    probe: 'https://acktvt-dps-app.onrender.com/',
+    sleeps: false,
     tips: [
       ['▣', 'Every register in one place',
        'RoPA, notices, consent, rights, vendors, breach and retention live in one workspace, each with its own clock. Nothing sits in a spreadsheet that only one person can find.',
@@ -286,8 +290,10 @@ var APPS = {
   bms: {
     name: 'Business Management Suite',
     lead: 'Orders to cash workspace',
+    opening: 'Opening your orders-to-cash workspace',
     url:   'https://erp.acktvt.com',
     probe: 'https://erp.acktvt.com/',
+    sleeps: true,
     tips: [
       ['▦', 'One traceability spine',
        'Tender, order, purchase, batch, inspection, dispatch and invoice all hang off the same chain. Ask where a batch went and the answer is one screen, not four phone calls.',
@@ -305,10 +311,13 @@ var APPS = {
   }
 };
 
-/* Expectations, in seconds. The bar eases toward 92% over EXPECT and only
-   reaches 100% when the server actually answers — an honest indicator rather
-   than a fake one. */
-var EXPECT = 45, SLOW = 70, GIVE_UP = 150, ATTEMPT_TIMEOUT = 9000;
+/* Expectations, in seconds. The bar eases toward 92% over EXPECT and reaches
+   100% when the server answers. After GO_ANYWAY the page forwards on its own
+   — nobody is left waiting here for a server that is in fact up. */
+var EXPECT = 45, SLOW = 50, GO_ANYWAY = 75;
+/* A reply that took longer than this was held by Render while the service
+   booted — so the service is up now, whatever the reply said. */
+var HELD_MS = 1500;
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
 var $ = function (id) { return document.getElementById(id) },
@@ -333,24 +342,30 @@ if (app && next) {
 if (!app) {
   document.title = 'Client portal · acktvt';
   $('choose').classList.remove('hidden');
-  /* Warm both quietly: whichever they pick has a head start. */
-  ping(APPS.dps.probe); ping(APPS.bms.probe);
+  /* Warm the ones that sleep: whichever they pick has a head start. */
+  for (var k in APPS) if (APPS[k].sleeps) ping(APPS[k].probe);
 } else {
   startWait(app);
 }
 
 /* ── one wake attempt ───────────────────────────────────────────────────── */
+/* Resolves to { ok, ms }. The request is no-cors, so the page never reads
+   the reply. Some servers (the ERP among them) also send headers that make
+   the browser refuse to hand even an opaque reply to another site — fetch
+   then rejects although the server answered. So a rejection is not "still
+   asleep"; how long it took tells us more:
+     resolved                 → the server answered
+     rejected after HELD_MS+  → Render held the request while the service
+                                booted, then answered → awake now
+     rejected at once         → answered straight away (awake, strict
+                                headers) or not reachable at all — either
+                                way waiting here will not help */
 function ping (url) {
-  /* no-cors: the response is opaque and unreadable, which is fine. A resolved
-     promise means the server completed a response; a rejection means it is
-     still booting, refused, or the network is down. */
-  var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  var t = ctl ? setTimeout(function () { ctl.abort() }, ATTEMPT_TIMEOUT) : null;
-  return fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + '_wake=' + Date.now(), {
-    mode: 'no-cors', cache: 'no-store', redirect: 'follow',
-    signal: ctl ? ctl.signal : undefined
-  }).then(function () { if (t) clearTimeout(t); return true })
-    .catch(function () { if (t) clearTimeout(t); return false });
+  var t0 = Date.now();
+  return fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + '_wake=' + t0, {
+    mode: 'no-cors', cache: 'no-store', redirect: 'follow', credentials: 'omit'
+  }).then(function () { return { ok: true, ms: Date.now() - t0 } },
+          function () { return { ok: false, ms: Date.now() - t0 } });
 }
 
 /* ── the waiting screen ─────────────────────────────────────────────────── */
@@ -358,7 +373,7 @@ function startWait (a) {
   document.title = 'Opening ' + a.name + ' · acktvt';
   $('wait').classList.remove('hidden');
   $('w-eyebrow').textContent = a.name;
-  $('w-title').textContent = 'Opening the ' + a.lead.toLowerCase();
+  $('w-title').textContent = a.opening;
   $('w-open').href = a.url;
 
   var other = key === 'dps' ? 'bms' : 'dps';
@@ -367,50 +382,46 @@ function startWait (a) {
 
   buildTips(a.tips);
 
-  var t0 = Date.now(), done = false, gaveUp = false;
+  var t0 = Date.now(), done = false, quick = 0, tick = null;
 
-  /* Progress + elapsed, once a second. */
-  var tick = setInterval(function () {
+  /* An always-on app needs no waiting: straight through. */
+  if (!a.sleeps) {
+    $('w-dek').textContent = 'Taking you to the sign-in page…';
+    return go('Opening the sign-in page.', 150);
+  }
+
+  /* Progress + elapsed, once a second; forward on our own at GO_ANYWAY. */
+  tick = setInterval(function () {
     if (done) return;
     var s = (Date.now() - t0) / 1000;
     $('w-bar').style.width = (92 * (1 - Math.exp(-s / (EXPECT / 2.3)))).toFixed(1) + '%';
     $('w-elapsed').textContent = s < 4 ? '' : '· ' + Math.round(s) + 's';
-    if (s > SLOW && !gaveUp) {
-      $('w-status').innerHTML = '<span class="slow">Taking longer than usual — still trying.</span>';
-    }
-    if (s > GIVE_UP && !gaveUp) {
-      gaveUp = true; clearInterval(tick);
-      $('w-status').innerHTML = '<span class="slow">The server has not answered yet.</span>';
-      $('w-elapsed').textContent = '';
-      $('w-dek').innerHTML = 'It may be a slow start, or a connection problem at your end. ' +
-        'Open it directly with the button below \u2014 or write to ' +
-        '<a href="mailto:acktvt@prowessz.com" style="color:#8FE0B6;' +
-        'border-bottom:1px solid rgba(143,224,182,.4)">acktvt@prowessz.com</a> if it stays down.';
-      $('w-open').textContent = 'Open it anyway →';
-      $('w-open').className = 'btn btn-primary';
-    }
+    if (s > SLOW) $('w-status').innerHTML = '<span class="slow">Almost there — opening in a moment.</span>';
+    if (s > GO_ANYWAY) go('Opening the sign-in page — it may take a few more seconds to appear.', 300);
   }, 1000);
 
-  /* Keep knocking until it answers. */
+  /* Knock until the server answers (see ping() for how "answered" is read). */
   (function attempt () {
-    if (done || gaveUp) return;
-    ping(a.probe).then(function (ok) {
-      if (done || gaveUp) return;
-      if (ok) return ready();
-      setTimeout(attempt, 1500);
+    if (done) return;
+    ping(a.probe).then(function (r) {
+      if (done) return;
+      if (r.ok || r.ms >= HELD_MS) return go('Ready — opening the sign-in page.', 600);
+      /* Two instant refusals in a row: the server is answering but will not
+         let this page see it (or cannot be reached). Hand over to the
+         browser — the sign-in page itself shows what is going on. */
+      if (++quick >= 2) return go('Opening the sign-in page.', 400);
+      setTimeout(attempt, 1200);
     });
   })();
 
-  /* Head start for the other suite, once, after the first few seconds. */
-  setTimeout(function () { ping(APPS[other].probe) }, 6000);
-
-  function ready () {
-    done = true; clearInterval(tick);
+  function go (msg, delay) {
+    if (done) return;
+    done = true; if (tick) clearInterval(tick);
     $('w-bar').style.width = '100%';
     $('w-meta').classList.add('ready');
-    $('w-status').textContent = 'Ready — opening the sign-in page.';
+    $('w-status').textContent = msg;
     $('w-elapsed').textContent = '';
-    setTimeout(function () { location.replace(a.url) }, 700);
+    setTimeout(function () { location.replace(a.url) }, delay);
   }
 }
 

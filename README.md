@@ -24,41 +24,39 @@ the query string.
 
 ## The only thing you normally edit
 
-Near the top of the `<script>` block in `index.html`:
+Near the top of the `<script>` block in `index.html`, one entry per suite:
 
 ```js
-var APPS = {
-  dps: { name: …, lead: …, url: 'https://dps.acktvt.com/login',
-         probe: 'https://dps.acktvt.com/', tips: [ … ] },
-  bms: { name: …, lead: …, url: 'https://erp.acktvt.com',
-         probe: 'https://erp.acktvt.com/',  tips: [ … ] }
-};
+dps: { url: 'https://acktvt-dps-app.onrender.com/login', probe: 'https://acktvt-dps-app.onrender.com/', sleeps: false, … }
+bms: { url: 'https://erp.acktvt.com',                    probe: 'https://erp.acktvt.com/',               sleeps: true,  … }
 ```
 
-* `url` — where the person ends up.
-* `probe` — what gets requested to wake the service. Same origin as `url`; the
-  root is usually right.
-* `tips` — the four cards that rotate while they wait, as
-  `[icon, heading, body, link, link text]`. Leave the last two empty for a card
-  with no link.
-
-**When the addresses change** (moving off `onrender.com`, adding a subdomain),
-change them here and nowhere else. The buttons on acktvt.com point at this
-page, not at the products, so they keep working.
+* `url` — where the person ends up. **When `dps.acktvt.com` is pointed at
+  Render, change the two DPS addresses to it** — nothing else changes, because
+  every button on acktvt.com points at this page, not at the products.
+* `probe` — what gets requested to wake the service (same site as `url`).
+* `sleeps` — `true` for a Render web service that spins down when idle (the
+  ERP); `false` for a Render static site, which is always on (the Data
+  Protection Suite). A suite that does not sleep is opened straight away.
+* `tips` — the four cards that rotate while they wait.
 
 ## How the wake works
 
-The page requests `probe` with `mode: 'no-cors'`. The response is opaque — we
-never read it, and no CORS header is needed on either product. What matters is
-that the request *completed*, which is precisely what "the service is awake"
-means. A sleeping Render service refuses or hangs, the request fails, and the
-page tries again every 1.5 seconds.
+The page requests `probe` with `mode: 'no-cors'` and never reads the reply.
+Some servers — the ERP among them — also send security headers that make the
+browser refuse to hand even an unreadable reply to another site, so the
+request "fails" although the server answered. The page therefore reads the
+**timing**, not the reply:
 
-The progress bar eases toward 92% over roughly 45 seconds and only reaches 100%
-when the server actually answers — it reports elapsed time honestly rather than
-pretending to know the remaining time. After 70 seconds it says it is taking
-longer than usual; after 150 it stops knocking and offers the direct link and
-the support address.
+| What happens | Meaning | What the page does |
+|---|---|---|
+| The request completes | The server answered | Opens the sign-in page |
+| It fails after more than 1.5 s | Render held it while the service booted, then answered | Opens the sign-in page |
+| It fails instantly, twice | The server answered at once (awake), or cannot be reached | Opens the sign-in page — the browser shows the real state |
+| Nothing after 75 s | Unusually slow start | Opens the sign-in page anyway |
+
+So nobody is ever left on this page: at worst they reach the sign-in page a
+few seconds before it is fully ready. **Open it now anyway** is always there.
 
 ## Files
 
