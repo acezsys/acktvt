@@ -23,7 +23,11 @@
   --body:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+/* The base colour sits on <html> too: with a fixed-attachment gradient, a
+   phone whose content runs past the viewport (and iOS overscroll) would
+   otherwise show a white band under the card. */
+html{background:#071F16}
+html,body{min-height:100%}
 body{
   margin:0; font-family:var(--body); color:#fff; line-height:1.55; font-size:16px;
   background:
@@ -309,6 +313,35 @@ var APPS = {
        'Prowessz runs the process with your team before handing over the keys — the software follows how you actually work, not a manual written elsewhere.',
        'https://www.prowessz.com', 'How we work']
     ]
+  },
+  /* The public Business Management Suite demo. Same waiting screen as a
+     client sign-in, for the same reason: a prospect must never meet Render's
+     spin-up page. `prewarm: false` keeps the chooser from waking the demo
+     service for people who only came here to sign in. */
+  demo: {
+    name: 'Business Management Suite demo',
+    lead: 'A live deployment, loaded with a sample company',
+    opening: 'Opening the live demo',
+    url:   'https://demo.acktvt.com/',
+    probe: 'https://demo.acktvt.com/',
+    sleeps: true,
+    prewarm: false,
+    other: 'bms',
+    switchLead: 'Already a client? Sign in to the ',
+    tips: [
+      ['▦', 'A real deployment, not a slideshow',
+       'This is the same software a client runs, loaded with a sample company — orders, purchases, stock, production, quality, dispatch and the dashboard all populated. Open anything; nothing here touches a real business.',
+       'https://acktvt.com/bms/', 'What the suite covers'],
+      ['▤', 'Start with an order',
+       'Open a sales order and follow it: the work order, the material it needs, the inspection it passes and the invoice at the end all hang off it. That chain is the whole idea.',
+       '', ''],
+      ['◑', 'Look at the dashboard last',
+       'Delays, dues and pendency at a glance. It is worth seeing after the detail screens, because every number on it is something you have just watched being entered.',
+       '', ''],
+      ['◉', 'Then talk to us',
+       'A 30-minute walkthrough on your own order flow tells you far more than a sample company can. We reply within one working day.',
+       'https://acktvt.com/bms/', 'Book a walkthrough']
+    ]
   }
 };
 
@@ -344,7 +377,7 @@ if (!app) {
   document.title = 'Client portal · acktvt';
   $('choose').classList.remove('hidden');
   /* Warm the ones that sleep: whichever they pick has a head start. */
-  for (var k in APPS) if (APPS[k].sleeps) ping(APPS[k].probe);
+  for (var k in APPS) if (APPS[k].sleeps && APPS[k].prewarm !== false) ping(APPS[k].probe);
 } else {
   startWait(app);
 }
@@ -377,9 +410,9 @@ function startWait (a) {
   $('w-title').textContent = a.opening;
   $('w-open').href = a.url;
 
-  var other = key === 'dps' ? 'bms' : 'dps';
-  $('w-switch').innerHTML = 'Wanted the other one? <a href="?app=' + other + '">' +
-    APPS[other].name + '</a>';
+  var other = a.other || (key === 'dps' ? 'bms' : 'dps');
+  $('w-switch').innerHTML = (a.switchLead || 'Wanted the other one? ') +
+    '<a href="?app=' + other + '">' + APPS[other].name + '</a>';
 
   buildTips(a.tips);
 
