@@ -28,7 +28,7 @@ Near the top of the `<script>` block in `index.html`, one entry per suite:
 
 ```js
 dps: { url: 'https://acktvt-dps-app.onrender.com/login', probe: 'https://acktvt-dps-app.onrender.com/', sleeps: false, … }
-bms: { url: 'https://erp.acktvt.com',                    probe: 'https://erp.acktvt.com/',               sleeps: true,  … }
+bms: { url: 'https://bms.acktvt.com',                    probe: 'https://bms.acktvt.com/',               sleeps: true,  … }
 ```
 
 * `url` — where the person ends up. **When `dps.acktvt.com` is pointed at
