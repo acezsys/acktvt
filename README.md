@@ -27,13 +27,13 @@ the query string.
 Near the top of the `<script>` block in `index.html`, one entry per suite:
 
 ```js
-dps: { url: 'https://acktvt-dps-app.onrender.com/login', probe: 'https://acktvt-dps-app.onrender.com/', sleeps: false, … }
+dps: { url: 'https://dps.acktvt.com/login', probe: 'https://dps.acktvt.com/', sleeps: false, … }
 bms: { url: 'https://bms.acktvt.com',                    probe: 'https://bms.acktvt.com/',               sleeps: true,  … }
 ```
 
-* `url` — where the person ends up. **When `dps.acktvt.com` is pointed at
-  Render, change the two DPS addresses to it** — nothing else changes, because
-  every button on acktvt.com points at this page, not at the products.
+* `url` — where the person ends up. The DPS entry points at `dps.acktvt.com`
+  (since October 2026) — every button on acktvt.com points at this page, not
+  at the products, so a future address change is made here only.
 * `probe` — what gets requested to wake the service (same site as `url`).
 * `sleeps` — `true` for a Render web service that spins down when idle (the
   ERP); `false` for a Render static site, which is always on (the Data
@@ -85,4 +85,4 @@ should turn up in search results ahead of acktvt.com.
 
 ---
 
-© Prowessz Consulting Services LLP · Mumbai
+© Prowessz Consulting Services LLP · India
