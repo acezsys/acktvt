@@ -156,6 +156,7 @@ h1,h2,h3{font-family:var(--head);font-weight:600;letter-spacing:-.015em;margin:0
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important}
 }
+.auto{font-size:13.5px;color:rgba(255,255,255,.72)}
 </style>
 </head>
 <body>
@@ -203,7 +204,7 @@ h1,h2,h3{font-family:var(--head);font-weight:600;letter-spacing:-.015em;margin:0
           </p>
 
           <div class="acts">
-            <a class="btn btn-ghost" id="w-open" href="#">Open it now anyway</a>
+            <span class="auto" id="w-auto">You will be taken in automatically — no need to click anything.</span>
             <span class="switch" id="w-switch"></span>
           </div>
         </div>
@@ -408,7 +409,6 @@ function startWait (a) {
   $('wait').classList.remove('hidden');
   $('w-eyebrow').textContent = a.name;
   $('w-title').textContent = a.opening;
-  $('w-open').href = a.url;
 
   var other = a.other || (key === 'dps' ? 'bms' : 'dps');
   $('w-switch').innerHTML = (a.switchLead || 'Wanted the other one? ') +

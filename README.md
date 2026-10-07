@@ -56,7 +56,9 @@ request "fails" although the server answered. The page therefore reads the
 | Nothing after 75 s | Unusually slow start | Opens the sign-in page anyway |
 
 So nobody is ever left on this page: at worst they reach the sign-in page a
-few seconds before it is fully ready. **Open it now anyway** is always there.
+few seconds before it is fully ready. There is deliberately no "open it now" button:
+clicking early only showed Render's own start-up page, so the page always forwards
+by itself (a reassurance line says so).
 
 ## Files
 
