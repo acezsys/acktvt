@@ -239,6 +239,7 @@ h1,h2,h3{font-family:var(--head);font-weight:600;letter-spacing:-.015em;margin:0
           <p class="fine">The same login your team uses on the shop floor and on the Android app.</p>
         </div>
       </div>
+      <p class="safe" style="margin-top:22px">Also from acktvt: <a href="?app=genuine">acktvt Genuine</a> · <a href="?app=origin">acktvt Origin</a> · <a href="?app=meet">acktvt Meet</a></p>
 
       <p class="safe">Signing in happens on the product's own address over an encrypted connection.<br>
         Trouble signing in? Write to <a href="mailto:acktvt@prowessz.com">acktvt@prowessz.com</a> or WhatsApp <a href="https://wa.me/918080255000">+91 80802 55000</a>.</p>
@@ -342,6 +343,62 @@ var APPS = {
       ['◉', 'Then talk to us',
        'A 30-minute walkthrough on your own order flow tells you far more than a sample company can. We reply within one working day.',
        'https://acktvt.com/bms/', 'Book a walkthrough']
+    ]
+  },
+  /* acktvt Genuine, acktvt Origin and acktvt Meet (November 2026). All three
+     are static sites that are always on, so they go straight through. */
+  genuine: {
+    name: 'acktvt Genuine',
+    lead: 'Certificates anyone can check',
+    opening: 'Opening acktvt Genuine',
+    url:   'https://genuine.acktvt.com/login',
+    probe: 'https://genuine.acktvt.com/',
+    sleeps: false,
+    other: 'origin',
+    switchLead: 'Looking for product labels? Open ',
+    tips: [
+      ['▣', 'One scan, no login',
+       'Whoever receives a certificate scans its QR code and sees the details exactly as issued, and whether it is still valid.',
+       'https://acktvt.com/#genuine', 'About acktvt Genuine'],
+      ['◈', 'Stamped every day',
+       'Each day’s certificates are combined into one fingerprint and stamped on the Bitcoin blockchain. Only fingerprints leave acktvt.',
+       '', '']
+    ]
+  },
+  origin: {
+    name: 'acktvt Origin',
+    lead: 'Product batches and QR labels',
+    opening: 'Opening acktvt Origin',
+    url:   'https://origin.acktvt.com/login',
+    probe: 'https://origin.acktvt.com/',
+    sleeps: false,
+    other: 'genuine',
+    switchLead: 'Looking for certificates? Open ',
+    tips: [
+      ['▦', 'A label for every batch or piece',
+       'A buyer scans the label and sees where and when the product was made and how it was checked, from the details you chose to publish.',
+       'https://acktvt.com/#origin', 'About acktvt Origin'],
+      ['◑', 'Recall in one step',
+       'Recall a batch with a reason and every one of its labels shows the recall at the next scan.',
+       '', '']
+    ]
+  },
+  meet: {
+    name: 'acktvt Meet',
+    lead: 'Video meetings in the browser',
+    opening: 'Opening acktvt Meet',
+    url:   'https://meet.acktvt.com/',
+    probe: 'https://meet.acktvt.com/',
+    sleeps: false,
+    other: 'bms',
+    switchLead: 'Calling from a record? Open the ',
+    tips: [
+      ['◉', 'Nothing to install',
+       'Meetings run in the browser on a computer or a phone. Guests join from the link in their invitation.',
+       'https://acktvt.com/#meet', 'About acktvt Meet'],
+      ['▤', 'From the record you are working on',
+       'In the Business Management Suite, the call button on a work order, enquiry or purchase order opens the meeting with the right people.',
+       '', '']
     ]
   }
 };
