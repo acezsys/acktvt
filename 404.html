@@ -7,14 +7,28 @@
 <title>Client portal · acktvt</title>
 <link rel="icon" href="/assets/favicon-64.png" sizes="64x64">
 <script>
-/* Any stray path on this host is a client heading for a workspace: send them
-   to the chooser, keeping ?app= if they had one. */
+/* Links that the Business Management Suite sends out are written on this
+   address — acktvt.prowessz.com/portal, certificate and label QR codes
+   (/g/…, /o/…), machine service-request QR codes, password-reset and
+   notification e-mails. This host has no such pages, so GitHub Pages serves
+   this file for them. Send each one through the waiting page to the same path
+   on the suite, so nobody meets Render's start-up page or lands on the chooser.
+     /portal            → the customer & vendor portal
+     any other path     → that same path on the Business Management Suite
+     ?app=… on the URL  → kept as it is (older links)                        */
 (function () {
-  var q = location.search || '';
-  location.replace('/' + q);
+  var path = location.pathname.replace(/\/+$/, '') || '/',
+      q = new URLSearchParams(location.search);
+  if (q.get('app') || q.get('to') || path === '/' || path === '/index.html') {
+    return location.replace('/' + location.search);
+  }
+  if (path.toLowerCase() === '/portal') {
+    return location.replace('/?app=portal' + (location.search ? '&next=' + encodeURIComponent('/portal' + location.search) : ''));
+  }
+  location.replace('/?app=link&next=' + encodeURIComponent(location.pathname + location.search + location.hash));
 })();
 </script>
-<meta http-equiv="refresh" content="0; url=/">
+<noscript><meta http-equiv="refresh" content="0; url=/"></noscript>
 <style>
 body{margin:0;min-height:100vh;display:grid;place-items:center;
   font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
@@ -23,6 +37,6 @@ a{color:#8FE0B6}
 </style>
 </head>
 <body>
-<p>Taking you to the client portal — <a href="/">continue</a>.</p>
+<p>Opening the page — <a href="/">continue</a>.</p>
 </body>
 </html>

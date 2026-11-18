@@ -17,6 +17,8 @@ one repo.
 | `…/?app=dps` | Wakes the Data Protection Suite and forwards to its sign-in page. |
 | `…/?app=bms` | Wakes the Business Management Suite and forwards to it. |
 | `…/?app=dps&next=/signup` | Same, but lands on a specific path — used by the "Sign up for a free trial" button on acktvt.com. |
+| `…/portal` | The customer & vendor portal (BMS Update 49). Opens a waiting screen written for a client's customers and vendors — no suite cards, no "wanted the other one" line — and forwards to `bms.acktvt.com/portal`. This is the address the BMS shows on its Portals page and puts in portal invitation e-mails. |
+| Any other path, e.g. `…/g/<code>`, `…/o/<code>`, `…/reset-password?…`, `…/vendor-pos?po=…`, `…/service-request/m/<token>` | Links the Business Management Suite writes on this address (its `APP_BASE_URL`): certificate and label QR codes, machine service-request QR codes, password-reset and notification e-mails. `404.html` sends each one through the waiting screen (`?app=link&next=<path>`) to the same path on `bms.acktvt.com`, query string included. Printed QR codes keep working without being reprinted. |
 
 `next` is accepted only when it resolves to the same origin as the app's own
 address, so the page cannot be turned into an open redirect by someone editing
@@ -65,6 +67,8 @@ by itself (a reassurance line says so).
 | File | Purpose |
 |---|---|
 | `index.html` | The whole page — markup, styles and script in one file, no web fonts and no external requests, so it paints instantly. |
+| `404.html` | Served by GitHub Pages for any path this site has no file for. Sends `/portal` to the portal and every other path to the same path on the Business Management Suite (see the table above); a URL that already carries `?app=` goes to the chooser logic unchanged. |
+| `portal/index.html` | Makes `acktvt.prowessz.com/portal` answer normally (not as a not-found page) and opens `?app=portal`. |
 | `assets/favicon-64.png`, `assets/apple-touch-icon.png` | acktvt icon. |
 | `prowessz-logo.png` | **Keep the existing file at the repo root.** The header shows it beside the acktvt mark; if it is missing the image hides itself and the page still reads correctly. |
 

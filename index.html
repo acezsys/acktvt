@@ -400,6 +400,56 @@ var APPS = {
        'In the Business Management Suite, the call button on a work order, enquiry or purchase order opens the meeting with the right people.',
        '', '']
     ]
+  },
+  /* Customer & vendor portals (BMS Update 49, November 2026). The people who
+     arrive here are a client's customers and vendors, not its staff — so no
+     "wanted the other one" line and no suite cards. Reached as
+     acktvt.prowessz.com/portal (portal/index.html and 404.html send it here). */
+  portal: {
+    name: 'Customer & vendor portal',
+    lead: 'For customers and vendors of an acktvt client',
+    opening: 'Opening the customer & vendor portal',
+    url:   'https://bms.acktvt.com/portal',
+    probe: 'https://bms.acktvt.com/',
+    sleeps: true,
+    prewarm: false,
+    other: null,
+    tips: [
+      ['◈', 'No password to remember',
+       'Sign in with your e-mail address and a one-time code sent to that address. The code works once, for 10 minutes.',
+       '', ''],
+      ['▤', 'Customers',
+       'See your orders, dispatches and invoices, download invoice copies and your account statement, any time of day.',
+       '', ''],
+      ['▦', 'Vendors',
+       'See the purchase orders placed on you, confirm or propose a delivery date, send a dispatch note before the truck leaves, and see the payments made to you.',
+       '', ''],
+      ['◉', 'Only what is yours',
+       'Each login sees only its own company’s records. Your contact at the company that invited you can add or remove people from your side.',
+       '', '']
+    ]
+  },
+  /* A link to one record — a certificate or label QR (/g/…, /o/…), a machine's
+     service-request QR, a password-reset or notification e-mail. 404.html sends
+     every such path here with ?next=, so it lands on that exact page. */
+  link: {
+    name: 'Business Management Suite',
+    lead: 'Opening the page you asked for',
+    opening: 'Opening the page you asked for',
+    url:   'https://bms.acktvt.com/',
+    probe: 'https://bms.acktvt.com/',
+    sleeps: true,
+    prewarm: false,
+    other: null,
+    dest: 'page',
+    tips: [
+      ['◈', 'Checking a certificate or a label?',
+       'You will see the details exactly as they were issued, and whether they are still valid. No login is needed.',
+       'https://acktvt.com', 'About acktvt'],
+      ['▤', 'Opened a link from an e-mail?',
+       'You land on the page the e-mail pointed to. If it asks you to sign in, use the same login you always use.',
+       '', '']
+    ]
   }
 };
 
@@ -467,9 +517,10 @@ function startWait (a) {
   $('w-eyebrow').textContent = a.name;
   $('w-title').textContent = a.opening;
 
-  var other = a.other || (key === 'dps' ? 'bms' : 'dps');
-  $('w-switch').innerHTML = (a.switchLead || 'Wanted the other one? ') +
+  var other = a.other === null ? null : (a.other || (key === 'dps' ? 'bms' : 'dps'));
+  if (other) $('w-switch').innerHTML = (a.switchLead || 'Wanted the other one? ') +
     '<a href="?app=' + other + '">' + APPS[other].name + '</a>';
+  var dest = a.dest || 'sign-in page';
 
   buildTips(a.tips);
 
@@ -477,8 +528,8 @@ function startWait (a) {
 
   /* An always-on app needs no waiting: straight through. */
   if (!a.sleeps) {
-    $('w-dek').textContent = 'Taking you to the sign-in page…';
-    return go('Opening the sign-in page.', 150);
+    $('w-dek').textContent = 'Taking you to the ' + dest + '…';
+    return go('Opening the ' + dest + '.', 150);
   }
 
   /* Progress + elapsed, once a second; forward on our own at GO_ANYWAY. */
@@ -488,7 +539,7 @@ function startWait (a) {
     $('w-bar').style.width = (92 * (1 - Math.exp(-s / (EXPECT / 2.3)))).toFixed(1) + '%';
     $('w-elapsed').textContent = s < 4 ? '' : '· ' + Math.round(s) + 's';
     if (s > SLOW) $('w-status').innerHTML = '<span class="slow">Almost there — opening in a moment.</span>';
-    if (s > GO_ANYWAY) go('Opening the sign-in page — it may take a few more seconds to appear.', 300);
+    if (s > GO_ANYWAY) go('Opening the ' + dest + ' — it may take a few more seconds to appear.', 300);
   }, 1000);
 
   /* Knock until the server answers (see ping() for how "answered" is read). */
@@ -496,11 +547,11 @@ function startWait (a) {
     if (done) return;
     ping(a.probe).then(function (r) {
       if (done) return;
-      if (r.ok || r.ms >= HELD_MS) return go('Ready — opening the sign-in page.', 600);
+      if (r.ok || r.ms >= HELD_MS) return go('Ready — opening the ' + dest + '.', 600);
       /* Two instant refusals in a row: the server is answering but will not
          let this page see it (or cannot be reached). Hand over to the
          browser — the sign-in page itself shows what is going on. */
-      if (++quick >= 2) return go('Opening the sign-in page.', 400);
+      if (++quick >= 2) return go('Opening the ' + dest + '.', 400);
       setTimeout(attempt, 1200);
     });
   })();
